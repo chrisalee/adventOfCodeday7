@@ -596,7 +596,48 @@ light green bags contain 4 muted silver bags, 2 muted tomato bags, 3 mirrored te
 
 `;
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//PART 1 - functional
+const responseText = data;
+const rules = responseText.trim().split('\n');
 
+const bagGraph = rules.reduce(
+  (graph, rule) => {
+    const [_, outerBag, innerBagList] = rule.match(/(.+) bags contain (.+)\./);
+    
+    const innerBags = 
+          innerBagList === "no other bags" 
+            ? {} 
+            : innerBagList.split(",").reduce((children, innerBag) => {
+              const [_, numString, innerColor] = innerBag.match(/(\d+) (.+) bag/);
+              return {...children, [innerColor]: parseInt(numString)}
+          }, {});
+    
+    return {...graph, [outerBag]: innerBags}
+},  {});
+// console.log(bagGraph);
+
+const bagTranspose = Object.entries(bagGraph).reduce(
+  (transpose, [outerBag, innerBags]) =>
+    Object.keys(innerBags).reduce(
+      (newGraph, innerBag) => ({
+        ...newGraph, 
+        [innerBag]: [...(newGraph[innerBag] || []), outerBag]
+      }),
+      {...transpose}
+    ), 
+  {}
+);
+// console.log(bagTranspose);
+
+const findAllParents = bag => 
+  (bagTranspose[bag] || []).reduce(
+    (visited, nextBag) => new Set([...visited, ...findAllParents(nextBag)]), new Set([bag])
+  );
+
+const parentCount = findAllParents("shiny gold").size - 1;
+
+console.log(parentCount);
 
 
 
