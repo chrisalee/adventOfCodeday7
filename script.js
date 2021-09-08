@@ -597,6 +597,57 @@ light green bags contain 4 muted silver bags, 2 muted tomato bags, 3 mirrored te
 `;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+//PART 2
+const responseText = data;
+
+const bagGraph = responseText.trim().split('\n').reduce(
+  (graph, rule) => {
+    const [_, outerBag, innerBagList] = rule.match(/(.+) bags contain (.+)\./);
+    
+    const innerBags = 
+          innerBagList === "no other bags" 
+            ? {} 
+            : innerBagList.split(",").reduce((children, innerBag) => {
+              const [_, numString, innerColor] = innerBag.match(/(\d+) (.+) bag/);
+              return {...children, [innerColor]: parseInt(numString)}
+          }, {});
+    
+    return {...graph, [outerBag]: innerBags}
+},  {});
+// console.log(bagGraph);
+
+const bagTranspose = Object.entries(bagGraph).reduce(
+  (transpose, [outerBag, innerBags]) =>
+    Object.keys(innerBags).reduce(
+      (newGraph, innerBag) => ({
+        ...newGraph, 
+        [innerBag]: [...(newGraph[innerBag] || []), outerBag]
+      }),
+      {...transpose}
+    ), 
+  {}
+);
+// console.log(bagTranspose);
+
+//algo to find all the parents
+const findAllParents = bag => 
+  (bagTranspose[bag] || []).reduce(
+    (visited, nextBag) => new Set([...visited, ...findAllParents(nextBag)]), new Set([bag])
+  );
+const parentCount = findAllParents("shiny gold").size - 1;
+
+// 4. write an algorithm to count all the children
+const countInnerBags = (bag) => 
+  Object.entries(bagGraph[bag] || []).reduce(
+    (count, [innerBag, quantity]) => 
+      count + quantity * countInnerBags(innerBag), 
+    1
+  );
+const childCount = countInnerBags("shiny gold") - 1;
+
+console.log(childCount);
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 //PART 1 - functional
 const responseText = data;
 const rules = responseText.trim().split('\n');
